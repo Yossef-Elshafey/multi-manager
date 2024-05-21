@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+	background: rgb(0, 0, 0);
+	background: linear-gradient(90deg,
+			rgba(0, 0, 0, 1) 0%,
+			rgba(10, 10, 10, 1) 35%,
+			rgba(18, 18, 18, 1) 100%);
+	min-height: 100dvh;
+}
+
+.text-animation {
+	position: relative;
+	width: fit-content;
+	font-size: 6em;
+	color: #222;
+}
+
+.text-animation::before {
+	content: attr(data-text);
+	position: absolute;
+	color: #fff;
+	width: 20px;
+	overflow: hidden;
+	white-space: nowrap;
+	animation: animate 8s linear infinite;
+}
+
+.overlay {
+  pointer-events: auto !important;
+}
+
+@keyframes animate {
+
+	0%,
+	10%,
+	100% {
+		width: 0;
+	}
+
+	70%,
+	90% {
+		width: 100%;
+	}
+}
+
+@layer components {
+	.container {
+		@apply w-3/4 mx-auto py-4;
+	}
+}
