@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { motion } from "framer-motion";
 import { Overlay } from "../../Overlay";
 import { actionSchema, UserNavActionsProps } from "../UserNavActions";
 import { Input } from "../../Input";
 import { useTok } from "../../../helpers/cookieManager";
+import { ReRenderContext } from "../../../pages/home/UserHome";
 
 export const Task = ({ setAction }: UserNavActionsProps) => {
   const [data, setData] = useState({
@@ -14,6 +15,7 @@ export const Task = ({ setAction }: UserNavActionsProps) => {
   const [err, setErr] = useState(false);
   const [succ, setSucc] = useState(false);
   const token = useTok();
+		const state = useContext(ReRenderContext)
 
   const changeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSucc(false);
@@ -31,9 +33,11 @@ export const Task = ({ setAction }: UserNavActionsProps) => {
     );
     if (req.status !== 201) {
       setErr(true);
+
     }
     if (req.status === 201) {
       setSucc(true);
+				state.setRender(true)
       setData({ title: "", desc: "", finish_by: "" });
     }
   };

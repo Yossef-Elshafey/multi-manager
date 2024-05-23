@@ -1,9 +1,11 @@
 import axios from "axios";
 import { CiEdit } from "react-icons/ci";
 import { MdDeleteForever } from "react-icons/md";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
-import SubmitAction from "../../SubmitAction";
+import { ReRenderContext } from "../../../pages/home/UserHome";
+import UpdateTask from "../../UpdateTask";
+import DeleteTask from "../../DeleteTask";
 
 export type Tasks = {
   completed: boolean;
@@ -14,14 +16,16 @@ export type Tasks = {
   title: string;
 }[];
 
+export const AlertContext = createContext<any>({});
+
 function ManageTask() {
-  const [tasks, setTasks] = useState<Tasks>();
+  const [signal, setSignal] = useState(0);
+  const [tasks, setTasks] = useState<Tasks>([] as Tasks);
   const [cookie, setCookie] = useCookies(["auth_user"]);
-  const [displayAlert, setDisplayAlert] = useState(false);
-  const [queryHelper, setQueryHelper] = useState({
-    method: "",
-    slug: "",
-  });
+  const [updateRequired, setUpdateRequired] = useState(false);
+  const [deleteRequired, setDeleteRequired] = useState(false);
+  const [targetObj, setTargetObj] = useState("");
+  const state = useContext(ReRenderContext); // render after add
 
   const getTasks = async () => {
     try {
@@ -36,62 +40,77 @@ function ManageTask() {
 
   useEffect(() => {
     getTasks();
-  }, []);
+    state.setRender(false);
+  }, [state]);
 
-  const performUpdate = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const slug = e.currentTarget.parentElement!.getAttribute("data-slug");
+  const performEdit = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const slug = e.currentTarget.parentElement?.getAttribute("id");
     if (slug) {
-      setQueryHelper({ method: "UPDATE", slug: slug });
-      setDisplayAlert(true);
+      setUpdateRequired(true);
+      setTargetObj(slug);
     }
   };
 
   const performDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const slug = e.currentTarget.parentElement!.getAttribute("data-slug");
+    const slug = e.currentTarget.parentElement?.getAttribute("id");
     if (slug) {
-      setQueryHelper({ method: "DELETE", slug: slug });
-      setDisplayAlert(true);
+      setDeleteRequired(true);
+      setTargetObj(slug);
     }
-    setDisplayAlert(true);
   };
 
   return (
     <>
-      {displayAlert && (
-        <SubmitAction
-          setDisplayAlert={setDisplayAlert}
-						queryHelper={queryHelper}
-						reRenderState={setTasks}
-        />
-      )}
-      {tasks?.map((task, i) => (
-        <div
-          className={`border  ${!task.completed ? "border-gray-600" : "border-green-500"} flex flex-col gap-y-4 justify-between overflow-scroll rounded-md text-white p-2`}
-          key={i}
-        >
-          <h2 className="text-center text-3xl">{task.title}</h2>
-          <p>{task.desc}</p>
-          <div className="flex items-center justify-between">
-            <p className="text-cyan-500">Finish by {String(task.finish_by)}</p>
-            <div className="flex items-center gap-x-2" data-slug={task.slug}>
-              <span
-                className="cursor-pointer text-xl text-cyan-500"
-                onClick={performUpdate}
-              >
-                <CiEdit />
-              </span>
-              <span
-                className="cursor-pointer text-xl text-rose-500"
-                onClick={performDelete}
-              >
-                <MdDeleteForever />
-              </span>
+      <AlertContext.Provider value={{ signal, setSignal }}>
+        {updateRequired && (
+          <UpdateTask
+            setState={setTasks}
+            target={targetObj}
+            updateDone={setUpdateRequired}
+            tasks={tasks}
+          />
+        )}
+        {deleteRequired && (
+          <DeleteTask
+            setState={setTasks}
+            target={targetObj}
+            deleteDone={setDeleteRequired}
+          />
+        )}
+        {tasks.map((task) => {
+          return (
+            <div
+              className={`border ${!task.completed ? "border-gray-600" : "border-green-500"} flex flex-col gap-y-4 justify-between overflow-scroll rounded-md text-white p-2`}
+              key={task.slug}
+            >
+              <h2 className="text-center text-3xl">{task.title}</h2>
+              <p>{task.desc}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-cyan-500">
+                  Finish by {String(task.finish_by)}
+                </p>
+                <div className="flex items-center gap-x-2" id={task.slug}>
+                  <span
+                    className="cursor-pointer text-xl text-cyan-500"
+                    onClick={performEdit}
+                  >
+                    <CiEdit />
+                  </span>
+                  <span
+                    className="cursor-pointer text-xl text-rose-500"
+                    onClick={performDelete}
+                  >
+                    <MdDeleteForever />
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      ))}
+          );
+        })}
+      </AlertContext.Provider>
     </>
   );
 }
+
 
 export default ManageTask;
